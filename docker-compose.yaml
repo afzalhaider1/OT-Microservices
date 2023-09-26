@@ -39,22 +39,17 @@ services:
       context: mysql/
     ports:
       - "3306:3306"
-    volumes:
-      - type: volume
-        source: mysql
-        target: /var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: "password"
-      MYSQL_DATABASE: "attendance_db"
+      MYSQL_DATABASE: "attendancedb"
     networks:
       - ot-microservices
 
   empms-attendance:
     build:
       context: attendance/
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.empms-attendance.rule=Host(`ot-microservices.opstree.com`) && PathPrefix(`/attendance/`)"
+    ports:
+      - "8081:8081"
     volumes:
       - type: bind
         source: ./attendance/config.yaml
@@ -62,9 +57,6 @@ services:
         read_only: true
     environment:
       CONFIG_FILE: "/app/config.yaml"
-#      ELASTIC_APM_SERVICE_NAME: "attendance"
-#      ELASTIC_APM_SERVER_URL: "http://apm-server:8200"
-      ELASTIC_APM_ENABLED: "false"
     networks:
       - ot-microservices
     depends_on:
@@ -73,16 +65,15 @@ services:
   empms-salary:
     build:
       context: salary/
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.empms-salary.rule=Host(`ot-microservices.opstree.com`) && PathPrefix(`/salary/`)"
+    ports:
+      - "8082:8082"
+    volumes:
+      - type: bind
+        source: ./salary/config.yaml
+        target: /app/config.yaml
+        read_only: true
     environment:
-#      ELASTIC_APM_SERVICE_NAME: "salary"
-#      ELASTIC_APM_SERVER_URL: "http://apm-server:8200"
-      SPRING_ELASTICSEARCH_REST_URIS: "empms-es:9200"
-      SPRING_ELASTICSEARCH_REST_USERNAME: elastic
-      SPRING_ELASTICSEARCH_REST_PASSWORD: elastic
-      ELASTIC_APM_ENABLED: "false"
+      CONFIG_FILE: "/app/config.yaml"
     networks:
       - ot-microservices
     depends_on:
@@ -91,9 +82,8 @@ services:
   empms-employee:
     build:
       context: employee/
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.empms-employee.rule=Host(`ot-microservices.opstree.com`) && PathPrefix(`/employee/`)"
+    ports:
+      - "8083:8083"
     volumes:
       - type: bind
         source: ./employee/config.yaml
@@ -101,9 +91,6 @@ services:
         read_only: true
     environment:
       CONFIG_FILE: "/app/config.yaml"
-#      ELASTIC_APM_SERVICE_NAME: "employee"
-#      ELASTIC_APM_SERVER_URL: "http://apm-server:8200"
-      ELASTIC_APM_ENABLED: "false"
     networks:
       - ot-microservices
     depends_on:
@@ -127,8 +114,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--providers.docker.exposedbydefault=false"
     ports:
-      - 80:80
-      - 8080:8080
+      - 80:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
